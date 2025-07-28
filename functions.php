@@ -293,7 +293,7 @@ function get_banner_data($options) {
         ->from('table.contents')
         ->where('cid IN ?', $cids)
         ->where('type = ?', 'post')
-        ->order('FIELD(cid, '.implode(',', $cids).')'));
+        ->order('cid', Typecho_Db::SORT_ASC));
 }
 
 // 查询文章数最多的前10个标签
@@ -343,11 +343,27 @@ function get_post_view($archive){
     $cid = $archive->cid;
     $db = Typecho_Db::get();
     $prefix = $db->getPrefix();
-    if (!array_key_exists('views', $db->fetchRow($db->select()->from('table.contents')))) {
-        $db->query('ALTER TABLE `' . $prefix . 'contents` ADD `views` INT(10) DEFAULT 0;');
-        echo 0;
-        return;
+    
+    try {
+        $db->fetchRow($db->select()->from('table.contents')->where('cid = ?', $cid));
+    } catch (Typecho_Db_Exception $e) {
+        // 尝试创建字段
+        try {
+            $db->query('ALTER TABLE ' . $prefix . 'contents ADD views INT DEFAULT 0;');
+        } catch (Typecho_Db_Exception $e) {
+            // ignore
+        }
     }
+
+    if (!array_key_exists('views', $db->fetchRow($db->select()->from('table.contents')->where('cid = ?', $cid)))) {
+        try {
+            $db->query('ALTER TABLE ' . $prefix . 'contents ADD views INT DEFAULT 0;');
+        } catch (Typecho_Db_Exception $e) {
+            echo 0;
+            return;
+        }
+    }
+
     $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', $cid));
     if ($archive->is('single')) {
         $views = Typecho_Cookie::get('extend_contents_views');
@@ -363,7 +379,7 @@ function get_post_view($archive){
             Typecho_Cookie::set('extend_contents_views', $views); //记录查看cookie
         }
     }
-    $newViews = $row['views'];
+    $newViews = $row['views'] + ($archive->is('single') && !in_array($cid, $views) ? 1 : 0);
     $newViews = formatNum($newViews);
     echo $newViews;
 }
