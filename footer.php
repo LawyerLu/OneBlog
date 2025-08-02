@@ -10,12 +10,12 @@
     <div class="copyright">
         Copyright&copy;<?php if (!empty($this->options->Webtime)): echo $this->options->Webtime().'-'; ?><?php endif; ?><?php echo date('Y'); ?>&nbsp;&nbsp;All Rights Reserved.&nbsp;&nbsp;Load：<?php echo timer_stop();?><br>
             <?php if (!empty($this->options->WA)): ?>
-                <img src="<?php $this->options->themeUrl('/static/img/beian.png'); ?>"/><a href="https://beian.mps.gov.cn" rel="nofollow noreferrer" target="_blank"><?php $this->options->WA(); ?></a>&nbsp;&nbsp;
+                <img src="<?php echo resource_cdn() . 'img/beian.png'; ?>"/><a href="https://beian.mps.gov.cn" rel="nofollow noreferrer" target="_blank"><?php $this->options->WA(); ?></a>&nbsp;&nbsp;
             <?php endif; ?>
             <?php if (!empty($this->options->ICP)): ?>
                 <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow noreferrer"><?php $this->options->ICP(); ?></a><br>
             <?php endif; ?>
-            Theme by <a id="copyright-pc" href="https://oneblog.net/oneblog" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a> V<?php echo parseThemeVersion();?>         
+            Powered by <a href="https://typecho.org/" title="Typecho框架" target="_blank">Typecho</a> Theme is <a id="copyright-pc" href="https://oneblog.net/oneblog" title="自豪地使用OneBlog主题" target="_blank">OneBlog </a>         
             <div class="switch">
                 <span>夜间模式</span>
                 <input type="checkbox" id="night2" class="night-toggle">
@@ -40,11 +40,11 @@
 
 
 <?php $this->footer();?>
-<script src="<?php $this->options->themeUrl('/static/sdk/jquery.min.js'); ?>"></script><!--基础依赖放在最前面-->
-<script src="<?php $this->options->themeUrl('/static/sdk/fancybox3/jquery.fancybox.min.js'); ?>"></script><!--图片灯箱效果-->
-<script src="<?php $this->options->themeUrl('/static/sdk/layer/layer.js'); ?>"></script>
+<script src="<?php echo resource_cdn() . 'sdk/jquery.min.js'; ?>"></script><!--基础依赖放在最前面-->
+<script src="<?php echo resource_cdn() . 'sdk/fancybox3/jquery.fancybox.min.js'; ?>"></script><!--图片灯箱效果-->
+<script src="<?php echo resource_cdn() . 'sdk/layer/layer.js'; ?>"></script>
 <?php if ($this->is('index')):?>
-<script src="<?php $this->options->themeUrl('/static/sdk/swiper/swiper-bundle.min.js'); ?>"></script>
+<script src="<?php echo resource_cdn() . 'sdk/swiper/swiper-bundle.min.js'; ?>"></script>
 <script>
 var bannerSwitch = '<?= $this->options->switch === 'on' ? 'on' : 'off' ?>';
 </script>
@@ -52,7 +52,7 @@ var bannerSwitch = '<?= $this->options->switch === 'on' ? 'on' : 'off' ?>';
 <?php if ($this->is('post') || $this->is('page')): ?>
 <?php if ($this->options->BeCode == 'on'):?>
 <!--代码高亮逻辑-->
-<script src="<?php $this->options->themeUrl('/static/sdk/highlightjs/highlight.min.js'); ?>"></script>
+<script src="<?php echo resource_cdn() . 'sdk/highlightjs/highlight.min.js'; ?>"></script>
 <script defer>
 document.addEventListener('DOMContentLoaded', function () {
     const codeBlocks = document.querySelectorAll('pre code');
@@ -77,14 +77,14 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php endif;?>
 
 <!--表情支持-->
-<script src="<?php $this->options->themeUrl('/static/js/emoji.js'); ?>"></script>
+<script src="<?php echo resource_cdn() . 'js/emoji.js'; ?>"></script>
 
 <!--评论无限加载js-->
-<script src="<?php $this->options->themeUrl('/static/js/comments.js'); ?>"></script>
+<script src="<?php echo resource_cdn() . 'js/comments.js'; ?>"></script>
 
 <?php endif;?>
 
-<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.6.2'); ?>"></script><!--主题js-->
+<script src="<?php echo resource_cdn() . 'js/main.js?v=3.6.2'; ?>"></script><!--主题js-->
 
 <!-- 版权信息 -->
 <div id="copyright-info" style="display: none;">
