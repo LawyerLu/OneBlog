@@ -65,10 +65,10 @@ function themeConfig($form) {
     $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
     $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
 
-    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
-    <script src="<?php echo Helper::options()->themeUrl('static/sdk/jquery.min.js'); ?>" type="text/javascript"></script>
-    <script src="<?php echo Helper::options()->themeUrl('static/sdk/layer/layer.js'); ?>" type="text/javascript"></script>
-    <script src="<?php echo Helper::options()->themeUrl('static/js/admin.js'); ?>" type="text/javascript"></script>
+    <link rel="stylesheet" href="<?php echo resource_cdn() . 'css/admin.css'; ?>" type="text/css" />
+    <script src="<?php echo resource_cdn() . 'sdk/jquery.min.js'; ?>" type="text/javascript"></script>
+    <script src="<?php echo resource_cdn() . 'sdk/layer/layer.js'; ?>" type="text/javascript"></script>
+    <script src="<?php echo resource_cdn() . 'js/admin.js'; ?>" type="text/javascript"></script>
     <div class="OneBlog"><h3>OneBlog 主题设置</h3></div>
     <div id="tab-container">
         <ul id="tab-nav"></ul>
@@ -148,7 +148,10 @@ function themeConfig($form) {
     $form->addInput($WA);
 
     //—————————————————————————————————————— 高级设置 ——————————————————————————————————————
-    
+        /* 静态资源 */
+    $resource_cdn = new Typecho_Widget_Helper_Form_Element_Text('resource_cdn',NULL,NULL,_t('静态资源cdn加速'),_t('将static文件夹整体上传至你的CDN服务器，在此处填入你的CDN服务器目录地址，并确保资源可以访问到。')
+    );
+    $form->addInput($resource_cdn);
     // 添加自定义 DNS 预解析域名字段
     $dnsPrefetch = new Typecho_Widget_Helper_Form_Element_Textarea('dnsPrefetch',NULL,NULL,_t('DNS预解析域名'),_t('请输入需要预解析的域名，每行一个。例如：<br>https://oneblog.net<br>https://cdn.oneblog.net')
     );
@@ -166,7 +169,6 @@ function themeConfig($form) {
     $RandomIMG = new Typecho_Widget_Helper_Form_Element_Radio('RandomIMG', array('oneblog' => '主题图库','off' => '关闭'),'off','随机高清缩略图', '设置后文章列表页在文章没有任何图片且没有单独设置封面时显示随机缩略图，如果想让文章详情页显示封面图，请编辑文章时填写自定义字段[文章封面]。');
     $form->addInput($RandomIMG);  
 
-    
     //—————————————————————————————————————— 社交按钮 ——————————————————————————————————————
 
     $QQ = new Typecho_Widget_Helper_Form_Element_Text('QQ', NULL, NULL, _t('QQ'), _t('请填写完整的QQ群描述或QQ号描述，输入的内容会直接作为弹框消息显示。'));
@@ -199,10 +201,17 @@ function themeConfig($form) {
 
 }
 
+function resource_cdn(){
+    if (Helper::options()->resource_cdn){
+	    return Helper::options()->resource_cdn . '/static/';
+	}else{
+	    return Helper::options()->themeUrl . '/static/';
+	}
+}
 
 //文章自定义字段
 function themeFields($layout) { ?>
-    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
+    <link rel="stylesheet" href="<?php echo resource_cdn() . 'css/admin.css'; ?>" type="text/css" />
     <?php 
     $thumb = new Typecho_Widget_Helper_Form_Element_Text('thumb', NULL, NULL, _t('封面图片'), _t('此处填写后会让文章/独立页面详情样式显示为有封面图的样式效果，文章列表也会出现封面缩略图，搜索引擎抓取的也是该封面图。'));
  	$thumb->input->setAttribute('class', 'full-width-input');
@@ -331,7 +340,7 @@ function AutoLightbox($content) {
 function parseEmojis($content) {
     // null、false等都转为空字符串，防止报错
     $content = (string)$content;
-    $emojiPath = Helper::options()->siteUrl.'usr/themes/OneBlog/static/img/emoji/';
+    $emojiPath = resource_cdn() . 'img/emoji/';
     return preg_replace_callback('/\[emoji:([a-zA-Z0-9_]+)\]/', function($matches) use ($emojiPath) {
         $emojiName = $matches[1];
         return '<img class="biaoqing" src="' . $emojiPath . $emojiName . '.svg" alt="' . $emojiName . '">';
@@ -631,7 +640,7 @@ function MemosList($comments, $user) { ?>
 function CatInfo($description, $defaultImage = '') {
     // 设置默认图片路径
     if (empty($defaultImage)) {
-        $defaultImage = Helper::options()->themeUrl . '/static/img/bg.jpg';
+        $defaultImage = resource_cdn() . 'img/bg.jpg';
     }
     
     $imageUrl = $defaultImage;
