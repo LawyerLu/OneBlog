@@ -14,13 +14,13 @@ $this->widget('Album_Widget_Photo@photoList', 'page=' . $currentPage)->to($photo
     <!--背景图片+logo-->
     <div class="page_thumb blur">
         <!-- 背景图片容器 -->
-        <div class="post_bg lazy-load" data-src="<?php echo $this->fields->thumb ? $this->fields->thumb : Helper::options()->themeUrl . '/static/img/photo.jpg'; ?>"></div>
+        <div class="post_bg lazy-load" data-src="<?php echo $this->fields->thumb ? $this->fields->thumb : resource_cdn() . 'img/photo.jpg'; ?>"></div>
         <div class="pc">
             <!-- 新增的菜单按钮 -->
             <i class="iconfont icon-nav menu-button"></i>
             <div class="page-head">
                 <a class="logo" href="<?php $this->options->siteUrl(); ?>">
-                    <img src="<?php echo $this->options->logoWhite ? $this->options->logoWhite : Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>">
+                    <img src="<?php echo $this->options->logoWhite ? $this->options->logoWhite : resource_cdn() . 'img/logoWhite.svg'; ?>">
                 </a>
             </div>
         </div>
@@ -54,7 +54,7 @@ $this->widget('Album_Widget_Photo@photoList', 'page=' . $currentPage)->to($photo
         </div>
         <?php else:?>
     	<div class="nodata">
-            <img src='<?php $this->options->themeUrl('static/img/nodata.svg'); ?>'></img>
+            <img src='<?php echo resource_cdn() . 'img/nodata.svg'; ?>'></img>
             <span>暂未启用相册插件，请先安装并启用该插件。</span>
         </div>
     	<?php endif;?>
