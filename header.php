@@ -28,14 +28,14 @@ foreach ($domains as $domain): ?>
         ], '', ' - '); ?><?php $this->options->title(); ?>
 <?php endif; ?>
 </title>
-<link href="<?php $this->options->themeUrl('/static/sdk/animate.compat.css'); ?>" rel="stylesheet"><!--动画效果-->
+<link href="<?php echo resource_cdn() . 'sdk/animate.compat.css'; ?>" rel="stylesheet"><!--动画效果-->
 <link href="//at.alicdn.com/t/c/font_3940454_drimor4umam.css" rel="stylesheet"/><!---图标库 iconfont.cn -->
 <?php if ($this->is('index')):?>
-<link rel="stylesheet" href="<?php $this->options->themeUrl('/static/sdk/swiper/swiper-bundle.min.css'); ?>" /><!--轮播图-->
+<link rel="stylesheet" href="<?php echo resource_cdn() . 'sdk/swiper/swiper-bundle.min.css'; ?>" /><!--轮播图-->
 <?php endif;?>
-<link rel="stylesheet" href="<?php $this->options->themeUrl('/static/sdk/fancybox3/jquery.fancybox.min.css'); ?>" /><!--灯箱效果-->
-<link href="<?php $this->options->themeUrl('/static/css/main.css?v=3.6.2'); ?>" rel="stylesheet"/><!--主题核心样式-->
-<link href="<?php $this->options->themeUrl('/static/css/m.css?v=3.6.2'); ?>" rel="stylesheet"/><!--主题核心样式-->
+<link rel="stylesheet" href="<?php echo resource_cdn() . 'sdk/fancybox3/jquery.fancybox.min.css'; ?>" /><!--灯箱效果-->
+<link href="<?php echo resource_cdn() . 'css/main.css?v=3.6.2'; ?>" rel="stylesheet"/><!--主题核心样式-->
+<link href="<?php echo resource_cdn() . 'css/m.css?v=3.6.2'; ?>" rel="stylesheet"/><!--主题核心样式-->
 <style>
 :root {
     --theme-color: <?php $color = $this->options->themeColor;echo $color ? $color : '#ff5050';?>;
@@ -43,8 +43,8 @@ foreach ($domains as $domain): ?>
 <?php echo $this->options->CSS;?>
 </style>
 <!--各页面OG信息及SEO优化-->
-<?php $NoPostIMG = $this->options->NoPostIMG ? $this->options->NoPostIMG : Helper::options()->themeUrl . '/static/img/bg.jpg';
-$Webthumb = $this->options->Webthumb ? $this->options->Webthumb : Helper::options()->themeUrl . '/static/img/logo.png';
+<?php $NoPostIMG = $this->options->NoPostIMG ? $this->options->NoPostIMG : resource_cdn() . 'img/bg.jpg';
+$Webthumb = $this->options->Webthumb ? $this->options->Webthumb : resource_cdn() . 'img/logo.png';
 ?>
 <!--首页-->
 <?php if ($this->is('index')): ?>
@@ -70,8 +70,9 @@ $thumb = showThumbnail($this);?>
 <meta name="msapplication-TileImage" content="<?php echo $Webthumb; ?>">
 <?php endif;?>
 <script>
-var logoUrl = "<?php echo $this->options->logo ? $this->options->logo : Helper::options()->themeUrl . '/static/img/logo.svg'; ?>";
-var logoWhiteUrl = "<?php echo $this->options->logoWhite ? $this->options->logoWhite : Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>";
+const RES_CDN = "<?php echo resource_cdn(); ?>";
+var logoUrl = "<?php echo $this->options->logo ? $this->options->logo : resource_cdn() . 'img/logo.svg'; ?>";
+var logoWhiteUrl = "<?php echo $this->options->logoWhite ? $this->options->logoWhite : resource_cdn() . 'img/logoWhite.svg'; ?>";
 var bannerSwitch = "<?php echo $this->options->switch; ?>";
 (function() {
     var currentTheme = document.cookie.replace(/(?:(?:^|.*;\s*)eyeProtectMode\s*\=\s*([^;]*).*$)|^.*$/, "$1");
