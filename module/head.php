@@ -19,7 +19,7 @@
 <!--顶部菜单-->
 <div class="header bg-white">
     <i class="iconfont icon-nav"></i>
-    <a class="logo" id="logo" href="<?php $this->options->siteUrl(); ?>" style="background-image:url('<?php echo $this->options->logo ? $this->options->logo : Helper::options()->themeUrl . '/static/img/logo.svg'; ?>')"></a>
+    <a class="logo" id="logo" href="<?php $this->options->siteUrl(); ?>" style="background-image:url('<?php echo $this->options->logo ? $this->options->logo : resource_cdn() . 'img/logo.svg'; ?>')"></a>
     <i id="search-btn" class="iconfont icon-search m"></i>
 </div>
 
