@@ -17,7 +17,7 @@ $this->need('header.php'); ?>
 <?php $this->need('module/head.php');
 if ($this->is('index')){//首页显示banner
     if ($this->options->switch == 'on') {
-        $defaultThumb = Helper::options()->themeUrl . '/static/img/bg.jpg';
+        $defaultThumb = resource_cdn() . 'img/bg.jpg';
         $defaultPost = [
             'link' => 'https://oneblog.net',
             'title' => '请填写文章cid',
@@ -102,7 +102,7 @@ if ($this->is('index')){//首页显示banner
     </div>
 <?php else: ?>
     <div class="nodata blur">
-        <img src='<?php $this->options->themeUrl('static/img/nodata.svg'); ?>'></img>
+        <img src='<?php echo resource_cdn() . 'img/nodata.svg'; ?>'></img>
         <span>暂无相关内容</span>
         <a href="<?php $this->options->siteUrl(); ?>">返回首页</a>
     </div>
