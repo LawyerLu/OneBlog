@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // 主题设置备份与恢复
 jQuery(function($){
+    const ajaxUrl = location.href.split('#')[0];
     function showResult(msg, icon, reload){
         if (typeof layer !== 'undefined') {
             layer.msg(msg, {icon: icon, time: 1200}, function(){
@@ -158,7 +159,7 @@ jQuery(function($){
             if(confirm('确定要备份当前主题配置吗？')) doBackup();
         }
         function doBackup(){
-            $.post(location.href, {action:'oneblog_theme_backup', _ajax:1}, function(res){
+            $.post(ajaxUrl, {action:'oneblog_theme_backup', _ajax:1}, function(res){
                 if(res && res.success){
                     showResult(res.message, 1, true);
                 }else{
@@ -180,7 +181,7 @@ jQuery(function($){
             if(confirm('确定要恢复主题配置吗？恢复操作不可逆，请谨慎！')) doRestore();
         }
         function doRestore(){
-            $.post(location.href, {action:'oneblog_theme_restore', _ajax:1}, function(res){
+            $.post(ajaxUrl, {action:'oneblog_theme_restore', _ajax:1}, function(res){
                 if(res && res.success){
                     showResult(res.message, 1, true);
                 }else{
@@ -191,5 +192,73 @@ jQuery(function($){
             });
         }
     });
+
+    function ensureUploadStyles(){
+        if (document.getElementById('ob-upload-style')) return;
+        const style = document.createElement('style');
+        style.id = 'ob-upload-style';
+        style.textContent = `
+.ob-upload-input-wrap{position:relative;display:block;width:100%;}
+.ob-upload-input-wrap>input[type="text"]{padding-right:78px;box-sizing:border-box;}
+.ob-upload-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:28px;padding:0 10px;border:1px solid #dcdcdc;background:#f3f3f3;color:#333;border-radius:3px;font-size:12px;line-height:26px;cursor:pointer;}
+.ob-upload-btn:hover{background:#ededed;}
+.ob-upload-btn:disabled{opacity:.6;cursor:not-allowed;}
+        `.trim();
+        document.head.appendChild(style);
+    }
+
+    function bindUpload(fieldName){
+        const $input = $(`input[name="${fieldName}"]`);
+        if (!$input.length) return;
+        if ($input.data('obUploadBind')) return;
+        $input.data('obUploadBind', 1);
+
+        ensureUploadStyles();
+
+        $input.wrap('<span class="ob-upload-input-wrap"></span>');
+        const $wrap = $input.parent();
+        const $btn = $('<button type="button" class="ob-upload-btn">上传</button>');
+        const $file = $('<input type="file" class="ob-upload-file" accept="image/*,.svg,.ico" style="display:none;">');
+        $wrap.append($btn, $file);
+
+        $btn.on('click', function(){
+            $file.trigger('click');
+        });
+
+        $file.on('change', function(){
+            const file = this.files && this.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('action', 'oneblog_theme_upload_image');
+            formData.append('_ajax', '1');
+            formData.append('key', fieldName);
+            formData.append('file', file);
+
+            $btn.prop('disabled', true).text('上传中');
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json'
+            }).done(function(res){
+                if (res && res.success && res.url) {
+                    $input.val(res.url).trigger('change');
+                    showResult(res.message || '上传成功', 1);
+                } else {
+                    showResult((res && res.message) ? res.message : '上传失败', 2);
+                }
+            }).fail(function(){
+                showResult('请求失败，请检查网络', 2);
+            }).always(function(){
+                $btn.prop('disabled', false).text('上传');
+                $file.val('');
+            });
+        });
+    }
+
+    ['logo','logoWhite','Favicon','Tagbg','Webthumb','Weixin'].forEach(bindUpload);
 });
     

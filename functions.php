@@ -30,13 +30,14 @@ function themeConfig($form) {
         }
         $backPath = $absUploadDir . '/BackupSetting_' . $theTheme . '.txt';
         $ret = ['success'=>false, 'message'=>'未知错误'];
-        if ($_POST['action'] === 'oneblog_theme_backup') {
+        $action = $_POST['action'] ?? '';
+        if ($action === 'oneblog_theme_backup') {
             $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
             $ok = file_put_contents($backPath, $themeConfStr);
             $ret = $ok !== false
                 ? ['success'=>true, 'message'=>'备份成功']
                 : ['success'=>false, 'message'=>'备份失败，uploads 目录不可写'];
-        } elseif ($_POST['action'] === 'oneblog_theme_restore') {
+        } elseif ($action === 'oneblog_theme_restore') {
             if (file_exists($backPath)) {
                 $str = file_get_contents($backPath);
                 $updateThemeConQuery = $db->update('table.options')->rows(['value'=>$str])->where('name=?', 'theme:' . $theTheme);
@@ -46,6 +47,68 @@ function themeConfig($form) {
                     : ['success'=>false, 'message'=>'恢复失败，数据库操作异常'];
             } else {
                 $ret = ['success'=>false, 'message'=>'未找到备份文件，无法恢复'];
+            }
+        } elseif ($action === 'oneblog_theme_upload_image') {
+            $user = Typecho_Widget::widget('Widget_User');
+            if (!$user || !$user->pass('administrator', true)) {
+                $ret = ['success'=>false, 'message'=>'无权限操作'];
+            } else {
+                $allowedKeys = ['logo','logoWhite','Favicon','Tagbg','Webthumb','Weixin'];
+                $key = trim((string)($_POST['key'] ?? ''));
+                if ($key === '' || !in_array($key, $allowedKeys, true)) {
+                    $ret = ['success'=>false, 'message'=>'不支持的字段'];
+                } elseif (empty($_FILES['file']) || !is_array($_FILES['file'])) {
+                    $ret = ['success'=>false, 'message'=>'未选择文件'];
+                } else {
+                    $file = $_FILES['file'];
+                    $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+                    if ($error !== UPLOAD_ERR_OK) {
+                        $ret = ['success'=>false, 'message'=>'上传失败（错误码：' . $error . '）'];
+                    } else {
+                        $tmpName = $file['tmp_name'] ?? '';
+                        if (!$tmpName || !is_uploaded_file($tmpName)) {
+                            $ret = ['success'=>false, 'message'=>'无效的上传文件'];
+                        } else {
+                            $origName = (string)($file['name'] ?? '');
+                            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                            $allowedExt = ['jpg','jpeg','png','gif','webp','svg','ico'];
+                            if ($ext === '' || !in_array($ext, $allowedExt, true)) {
+                                $ret = ['success'=>false, 'message'=>'仅支持：' . implode(' / ', $allowedExt)];
+                            } else {
+                                $nameMap = [
+                                    'logo' => 'logo',
+                                    'logoWhite' => 'logoWhite',
+                                    'Favicon' => 'favicon',
+                                    'Tagbg' => 'Tagbg',
+                                    'Webthumb' => 'Webthumb',
+                                    'Weixin' => 'Weixin',
+                                ];
+                                $baseName = $nameMap[$key] ?? $key;
+                                $baseName = preg_replace('/[^A-Za-z0-9_-]/', '', (string)$baseName);
+                                if ($baseName === '') {
+                                    $ret = ['success'=>false, 'message'=>'文件名不合法'];
+                                } else {
+                                    $themeDir = __DIR__;
+                                    if (!is_dir($themeDir) || !is_writable($themeDir)) {
+                                        $ret = ['success'=>false, 'message'=>'主题目录不可写：' . $themeDir];
+                                    } else {
+                                        $newName = $baseName . '.' . $ext;
+                                        $destPath = $themeDir . DIRECTORY_SEPARATOR . $newName;
+                                        if (file_exists($destPath) && !@unlink($destPath)) {
+                                            $ret = ['success'=>false, 'message'=>'无法覆盖旧文件：' . $newName];
+                                        } elseif (!move_uploaded_file($tmpName, $destPath)) {
+                                            $ret = ['success'=>false, 'message'=>'保存失败，请检查目录权限'];
+                                        } else {
+                                            @chmod($destPath, 0644);
+                                            $url = rtrim((string)Helper::options()->themeUrl, '/\\') . '/' . $newName;
+                                            $ret = ['success'=>true, 'message'=>'上传成功', 'url'=>$url, 'filename'=>$newName];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         echo json_encode($ret);
