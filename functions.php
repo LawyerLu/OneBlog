@@ -83,6 +83,7 @@ function oneblogSitemapBuild() {
 
     $xml = new DOMDocument('1.0', 'UTF-8');
     $xml->formatOutput = true;
+    $xml->appendChild($xml->createProcessingInstruction('xml-stylesheet', 'type="text/xsl" href="' . oneblogSitemapStylesheetUrl($siteUrl) . '"'));
     $urlset = $xml->createElement('urlset');
     $urlset->setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
     $urlset->setAttribute('xmlns:image', 'http://www.google.com/schemas/sitemap-image/1.1');
@@ -99,9 +100,12 @@ function oneblogSitemapBuild() {
             ->order('created', Typecho_Db::SORT_DESC)
             ->limit(10000)
     );
-    $thumbs = oneblogSitemapThumbs(array_column($posts, 'cid'));
+    $postCids = array_column($posts, 'cid');
+    $thumbs = oneblogSitemapThumbs($postCids);
+    $postCategories = oneblogSitemapPostCategories($postCids);
 
     foreach ($posts as $row) {
+        $row = oneblogSitemapPostRouteRow($row, $postCategories[(int) $row['cid']] ?? null);
         $postPermalink = Typecho_Router::url('post', $row, $options->index);
         $postPermalink = oneblogSitemapUrl($postPermalink, $siteUrl);
         $image = oneblogSitemapUrl((string) showThumbnail(oneblogSitemapWidget($row, $thumbs[$row['cid']] ?? ''), false), $siteUrl);
@@ -186,6 +190,37 @@ function oneblogSitemapUrl($url, $siteUrl) {
     return rtrim($siteUrl, '/') . '/' . ltrim($url, '/');
 }
 
+// 获取 sitemap 展示样式表的绝对地址，浏览器打开 sitemap.xml 时会以表格形式展示。
+function oneblogSitemapStylesheetUrl($siteUrl) {
+    $root = rtrim(str_replace('\\', '/', __TYPECHO_ROOT_DIR__), '/');
+    $themeDir = str_replace('\\', '/', __DIR__);
+    $relative = 'usr/themes/OneBlog/static/sitemap.xsl';
+
+    if ($root !== '' && strpos($themeDir, $root . '/') === 0) {
+        $relative = ltrim(substr($themeDir, strlen($root)), '/');
+        $relative = rtrim($relative, '/') . '/static/sitemap.xsl';
+    }
+
+    return oneblogSitemapUrl($relative, $siteUrl);
+}
+
+// 为文章路由补齐分类占位符，避免自定义固定链接中的 {category} 原样出现在 sitemap。
+function oneblogSitemapPostRouteRow($row, $category) {
+    if (!empty($category['directory'])) {
+        $row['category'] = $category['directory'];
+    } elseif (!empty($category['slug'])) {
+        $row['category'] = $category['slug'];
+    } elseif (!empty($category['mid'])) {
+        $row['category'] = (string) $category['mid'];
+    }
+
+    if (!empty($category['slug'])) {
+        $row['categorySlug'] = $category['slug'];
+    }
+
+    return $row;
+}
+
 // 清理和验证URL，确保其为有效的绝对URL
 function oneblogSitemapCleanUrl($url) {
     $url = trim((string) $url);
@@ -233,6 +268,76 @@ function oneblogSitemapThumbs($cids) {
         $thumbs[(int) $row['cid']] = oneblogSitemapUrl($row['str_value'], $siteUrl);
     }
     return $thumbs;
+}
+
+// 批量获取文章所属分类，并生成父子分类目录，供 {category} 固定链接占位符使用。
+function oneblogSitemapPostCategories($cids) {
+    $cids = array_values(array_unique(array_filter(array_map('intval', (array) $cids))));
+    if (empty($cids)) return [];
+
+    $db = Typecho_Db::get();
+    $prefix = $db->getPrefix();
+    $rows = $db->fetchAll($db->query(
+        'SELECT r.cid, m.mid, m.name, m.slug, m.parent, m.order '
+        . 'FROM `' . $prefix . 'relationships` r '
+        . 'INNER JOIN `' . $prefix . 'metas` m ON r.mid = m.mid '
+        . 'WHERE m.type = ' . oneblogSitemapQuote('category') . ' '
+        . 'AND r.cid IN (' . implode(',', $cids) . ') '
+        . 'ORDER BY r.cid ASC, m.order ASC, m.mid ASC'
+    ));
+
+    if (empty($rows)) return [];
+
+    $metas = oneblogSitemapCategoryMetas();
+    $categories = [];
+    foreach ($rows as $row) {
+        $cid = (int) $row['cid'];
+        if (isset($categories[$cid])) continue;
+
+        $mid = (int) $row['mid'];
+        $row['directory'] = oneblogSitemapCategoryDirectory($mid, $metas);
+        $categories[$cid] = $row;
+    }
+
+    return $categories;
+}
+
+// 获取全部分类数据，支持为子分类生成 parent/child 形式的目录。
+function oneblogSitemapCategoryMetas() {
+    static $metas = null;
+    if ($metas !== null) return $metas;
+
+    $db = Typecho_Db::get();
+    $prefix = $db->getPrefix();
+    $rows = $db->fetchAll($db->query(
+        'SELECT mid, slug, parent FROM `' . $prefix . 'metas` WHERE type = ' . oneblogSitemapQuote('category')
+    ));
+
+    $metas = [];
+    foreach ($rows as $row) {
+        $metas[(int) $row['mid']] = [
+            'slug' => trim((string) ($row['slug'] ?? '')),
+            'parent' => (int) ($row['parent'] ?? 0)
+        ];
+    }
+    return $metas;
+}
+
+// 根据分类 mid 递归生成目录，最多向上追溯 20 层以避免异常循环。
+function oneblogSitemapCategoryDirectory($mid, $metas) {
+    $parts = [];
+    $visited = [];
+
+    while ($mid > 0 && isset($metas[$mid]) && !isset($visited[$mid]) && count($parts) < 20) {
+        $visited[$mid] = true;
+        $slug = trim((string) $metas[$mid]['slug']);
+        if ($slug !== '') {
+            array_unshift($parts, $slug);
+        }
+        $mid = (int) $metas[$mid]['parent'];
+    }
+
+    return implode('/', $parts);
 }
 
 // 批量获取分类或标签的相关信息和最后修改时间，用于 sitemap 的分类和标签列表
@@ -283,7 +388,8 @@ function oneblogSitemapSign() {
     ));
 
     $metas = $db->fetchRow($db->query(
-        'SELECT COUNT(DISTINCT m.mid) AS total, GROUP_CONCAT(DISTINCT m.mid ORDER BY m.mid) AS mids '
+        'SELECT COUNT(DISTINCT m.mid) AS total, '
+        . "GROUP_CONCAT(DISTINCT CONCAT(m.mid, ':', m.type, ':', m.slug, ':', COALESCE(m.parent, 0)) ORDER BY m.mid SEPARATOR ',') AS metas "
         . 'FROM `' . $prefix . 'metas` m '
         . 'INNER JOIN `' . $prefix . 'relationships` r ON m.mid = r.mid '
         . 'INNER JOIN `' . $prefix . 'contents` c ON r.cid = c.cid '
@@ -293,7 +399,7 @@ function oneblogSitemapSign() {
         . 'AND (c.password IS NULL OR c.password = ' . oneblogSitemapQuote('') . ')'
     ));
 
-    return $sign = md5(json_encode([$contents, $metas]));
+    return $sign = md5(json_encode(['sitemap_v2', $contents, $metas]));
 }
 
 // 安全地引用字符串，避免SQL注入风险
