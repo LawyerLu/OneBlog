@@ -89,7 +89,8 @@ function oneblogSitemapBuild() {
     $urlset->setAttribute('xmlns:image', 'http://www.google.com/schemas/sitemap-image/1.1');
     $xml->appendChild($urlset);
 
-    oneblogSitemapAddUrl($xml, $urlset, $seen, $siteUrl . '/', time(), 'daily', '1.0');
+    $homeImage = oneblogSitemapHomeImage($siteUrl);
+    oneblogSitemapAddUrl($xml, $urlset, $seen, $siteUrl . '/', time(), 'daily', '1.0', $homeImage ? [$homeImage] : []);
 
     $posts = $db->fetchAll(
         $db->select('cid', 'slug', 'created', 'modified', 'text')
@@ -202,6 +203,13 @@ function oneblogSitemapStylesheetUrl($siteUrl) {
     }
 
     return oneblogSitemapUrl($relative, $siteUrl);
+}
+
+// 获取首页 og:image 对应的网站标识图，写入 sitemap 首页的 image:image。
+function oneblogSitemapHomeImage($siteUrl) {
+    $options = Helper::options();
+    $image = $options->Webthumb ?: rtrim($options->themeUrl, '/') . '/static/img/logo.png';
+    return oneblogSitemapUrl($image, $siteUrl);
 }
 
 // 为文章路由补齐分类占位符，避免自定义固定链接中的 {category} 原样出现在 sitemap。
@@ -399,7 +407,9 @@ function oneblogSitemapSign() {
         . 'AND (c.password IS NULL OR c.password = ' . oneblogSitemapQuote('') . ')'
     ));
 
-    return $sign = md5(json_encode(['sitemap_v2', $contents, $metas]));
+    $homeImage = oneblogSitemapHomeImage(rtrim(Helper::options()->siteUrl, '/'));
+
+    return $sign = md5(json_encode(['sitemap_v3', $contents, $metas, $homeImage]));
 }
 
 // 安全地引用字符串，避免SQL注入风险
